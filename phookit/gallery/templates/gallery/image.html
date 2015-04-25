@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load i18n future mezzanine_tags blog_tags keyword_tags disqus_tags %}
+
+{% block meta_title %}{% trans "Gallery" %}{% endblock %}
+
+{% block title %}
+{% trans "Gallery" %}
+{% endblock %}
+
+{% block left_column %}
+    <div class="col-md-2 left">
+        <h3>Albums</h3>
+        {% for t in tags %}
+            <p>
+            <a href="">{{t}}</a>
+            </p>
+        {% endfor %}
+    </div>
+{% endblock %}
+
+
+
+{% block main_column %}
+    <div class="col-md-10 middle">
+    {% block main %}
+
+            <div class="row">
+                <div class="span4">
+                    <div class="media-list">
+                        <img class="img-responsive item-img" src="{{ MEDIA_URL }}{% thumbnail image.filename 420 260 95 .5 .5 True '25286b' %}" alt="{{i.title}}">
+                        <img class="image-overlay-thumb" src="{{ MEDIA_URL }}{% thumbnail image.filename 150 0 %}">
+                        <p>Tags:
+                        {% for t in image.tags.all %}
+                          {{t}},
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+    {% endblock %}
+{% endblock %}
+
+
+{% block right_column %}
+{% endblock %}
+

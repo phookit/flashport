@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block left_pane %}
+
+<div>
+    <section>
+    <form action="/contact" method="post">
+        {{form}}
+        <input type="submit" value="Submit">
+    </form>
+    </section>
+</div>
+
+{% endblock %}

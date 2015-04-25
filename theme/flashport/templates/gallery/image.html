@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load mezzanine_tags %}
+
+{% block left_pane %}
+
+<div>
+    <section>
+        <div class="row text-center">
+            <div class="col-lg-12">
+                
+                <img class="img-responsive" src="{{image.public_filename}}" alt="{{image.title}}">
+                
+                <!--activity title -->
+                <h1>{{image.title}}</h1>
+                <h1 class="spacer">___</h1>
+                
+                <p class="work">{{image.description}}</p>
+            </div>
+        </div>   
+    </section>
+</div>
+             
+    {% block eof_js %}
+    <script>
+        PhookitGallery.showImage("{{image.public_filename}}", "{{image.title}}");
+    </script>
+    {%endblock %}
+{% endblock %}
+
