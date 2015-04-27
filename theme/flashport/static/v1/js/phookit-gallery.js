@@ -1,15 +1,16 @@
+"use strict";
+
 $.fn.isOnScreen = function() {
     var element = this.get(0);
     var bounds = element.getBoundingClientRect();
     return bounds.top < window.innerHeight && bounds.bottom > 0;
-}
+};
 
-
-var PhookitGallery = (function(options) {
+var PhookitGallery = (function(optionsin) {
     // private (settings)
 
     var defaults = {
-        apiBase: 'http://127.0.0.1:8000/api',
+        apiBase: 'http://whathappensinvegas.co.uk/api',
         tagsIndex: '/tags/',
         imagesByTagRoot: '/images/t/',
 
@@ -30,12 +31,13 @@ var PhookitGallery = (function(options) {
                                     '<p class="item-description">{{description}}</p>'+
                                 '</div>'+
                             '</div>'+
-                        '</div>',
+                        '</div>'
 
     };
 
-    var options = $.extend({}, defaults, options); 
+    var options = $.extend({}, defaults, optionsin); 
 
+    var timerHandle = undefined;
     var currentTag = 'latest';
 
     function _buildTagMenuItemName(slug) {
@@ -70,22 +72,18 @@ var PhookitGallery = (function(options) {
     function hideTags(tag_slug) {
         var items;
         if( tag_slug ) {
-            console.log("hiding tag:"+tag_slug);
             items = $("#links .tag-"+tag_slug);
         }
         else {
-            console.log("hiding all imgs");
             items = $("#links .tag");
         }
         items.each(function(index) {
-            console.log("hiding idx:"+index);
             $(this).css('display', 'none');
             $(this).css('visibility', 'hidden');
         });
     }
 
     function showTags(tag_slug) {
-        console.log("showing tags:"+tag_slug);
         var items = $("#links .tag-"+tag_slug);
         items.each(function(index) {
             $(this).css('display', 'inline-block');
@@ -94,15 +92,14 @@ var PhookitGallery = (function(options) {
     }
 
 
-    function _addTagMenuItem(title, slug, prepend=false) {
-        var item = $(_buildTagMenuId(slug))
+    function _addTagMenuItem(title, slug, prepend) {
+        var item = $(_buildTagMenuId(slug));
         if(!item.length) {
             item = $("<a/>", {
                 html: title,
                 id: _buildTagMenuItemName(slug),
                 href: "#"
             });
-            //<a href="/gallery/{{t.slug}}" class="filter" id="menu-{{t.slug}}">{{t.title}}</a> 
             if( prepend ) {
                 $(options.tagMenuListName).prepend(item);
             }
@@ -114,7 +111,6 @@ var PhookitGallery = (function(options) {
         item.click(
             {tag_slug: slug},
             function( event ) {
-                console.log( "TAG:" + event.data.tag_slug + " clicked!");
                 // TODO: Clear the image thumbnail list 
                 tag = getTag(event.data.tag_slug);
                 if( currentTag !== event.data.tag_slug ) {
@@ -133,23 +129,22 @@ var PhookitGallery = (function(options) {
 
     function _addImageToUIList(tag, image_data) {
         var idx_offset = tag.imageCount() - image_data.length;
-        console.log("OFFS:"+idx_offset+" IC:"+tag.imageCount() +" IDL:"+image_data.length);
         // new images have been added to an album, add them to the page
         for( var i in image_data ) {
-            console.log("ADDING IMAGE:"+image_data[i].title);
-            var s = options.imageMenuItemTemplate
-                               .replace(/{{title}}/g, image_data[i].title);
+            var s = options.imageMenuItemTemplate;
+
+            s = s.replace(/{{title}}/g, image_data[i].title);
             s = s.replace(/{{thumbnail}}/g,  image_data[i].thumbnail);
             s = s.replace(/{{description}}/g,  image_data[i].description);
             s = s.replace(/{{url}}/g,  image_data[i].url);
             s = s.replace(/{{tag_slug}}/g,  tag.slug);
-            item = $("<div/>", {
-                html: s,
+
+            var item = $("<div/>", {
+                html: s
             });
-            console.log("GALL IDX:"+ (parseInt(i,10) + idx_offset));
             item.find("a").click(
                 {tag_slug: tag.slug,
-                 img_idx: (parseInt(i,10) + idx_offset),
+                 img_idx: (parseInt(i,10) + idx_offset)
                 },
                 function( event ) {
                     stopTimer();
@@ -167,7 +162,6 @@ var PhookitGallery = (function(options) {
     }
 
     function _fetchImages(tag_slug) {
-        console.log("fetchImages:" + tag_slug);
         var next_page = undefined;
         var tag = getTag( tag_slug );
         if( tag ) {
@@ -185,12 +179,10 @@ var PhookitGallery = (function(options) {
             return;
         }
 
-        console.log("fetchImages ajax:" + next_page);
         return $.ajax(next_page, {
             dataType: 'json',
             success: function( resp ) {
-                console.log("fetch images success");
-                res = resp.results;
+                var res = resp.results;
                 tag.image_count = resp.count;
                 tag.next_page = resp.next;
                 tag.images.push.apply(tag.images, res);
@@ -199,18 +191,14 @@ var PhookitGallery = (function(options) {
     }
 
     var checkImageList = function(){
-      console.log("checkImageList");  
       var tester = $('#target');
       var visible = tester.isOnScreen();
-      if( visible ) {
+      if( visible || !timerHandle) {
             stopTimer();
             hideLoading();
 
-            console.log("Target is visible: "+currentTag);
-            $.when(_fetchImages(currentTag))
-                .then(function(resp) {
+            $.when(_fetchImages(currentTag)).then(function(resp) {
                     var tag = getTag(currentTag);
-                    console.log("resp="+resp);
                     if( resp ) {
                         _addImageToUIList(tag, resp.results);
                     }
@@ -221,11 +209,10 @@ var PhookitGallery = (function(options) {
                 }
             );
       }
-    }
+    };
 
 
     function showGallery(tag_slug, img_idx) {
-        console.log("GAL INDEX:"+img_idx);
         var adaptImages = function(images) {
             var res = [];
             for( var i in images ) {
@@ -233,11 +220,11 @@ var PhookitGallery = (function(options) {
                     title: images[i].title,
                     href: images[i].public_filename,
                     type: 'image/jpeg',
-                    thumbnail: images[i].thumbnail,
+                    thumbnail: images[i].thumbnail
                 });
             }
             return res;
-        }
+        };
 
         var tag = getTag(tag_slug);
         var gall_images = adaptImages(tag.images);
@@ -251,9 +238,7 @@ var PhookitGallery = (function(options) {
 
                       // Callback function executed after the slide change transition.
                       if( (index+1) === this.getNumber() ) {
-                        $.when(_fetchImages(tag.slug))
-                            .then(function(resp) {
-                                console.log("slideend: resp="+resp);
+                        $.when(_fetchImages(tag.slug)).then(function(resp) {
                                 if( resp ) {
                                     _addImageToUIList(tag, resp.results);
                                     gallery.add(adaptImages(resp.results));
@@ -263,10 +248,9 @@ var PhookitGallery = (function(options) {
                   },
                   onclose: function () {
                       checkImageList();
-                  },
+                  }
               }
             );
-
     }
 
 
@@ -274,16 +258,15 @@ var PhookitGallery = (function(options) {
         image = {
             title: title,
             href: filename,
-            type: 'image/jpeg',
+            type: 'image/jpeg'
         };
 
         var gallery = blueimp.Gallery(
             [ image ],
             {
                 onclosed: function () {
-                    // redirect to /
                     $(location).attr('href','/');
-                },
+                }
             }
         );
     }
@@ -299,27 +282,26 @@ var PhookitGallery = (function(options) {
         this.images = [];
         this.imageCount = function() {
             return this.images.length;
-        }
+        };
     }
 
     var tags = {};
 
     var getTag = function(slug) {
         return tags[slug];
-    }
+    };
 
     var addTag = function(data, cb) {
-        console.log("adding tag:"+data.slug);
-        t = new Tag(data.title, data.slug, data.main_tag);
+        var t = new Tag(data.title, data.slug, data.main_tag);
         tags[data.slug] = t;
-        cb(t)
-    }
+        cb(t);
+    };
 
     var addTags = function(data, cb) {
         for (var r in data) {
             addTag(data[r], cb);
         }
-    }
+    };
 
     function loadTags() {
         return $.ajax(options.apiBase + options.tagsIndex, {
@@ -328,54 +310,42 @@ var PhookitGallery = (function(options) {
               // insert the "latest" option  
               addTag({title:"Latest",
                       slug:"latest",  
-                      main_tag:"true",
+                      main_tag:"true"
               }, function(tag) {
-                  _addTagMenuItem(tag.title, tag.slug);
+                  _addTagMenuItem(tag.title, tag.slug, false);
               });
 
               addTags(resp, function(tag) {
-                  _addTagMenuItem(tag.title, tag.slug);
+                  _addTagMenuItem(tag.title, tag.slug, false);
               });
             }
         });
     }
 
-    var timerHandle = undefined;
 
     function startTimer() {
         if( ! timerHandle ) {
-            console.log("Starting timer");
             timerHandle = window.setInterval(checkImageList, 500);
-        }
-        else {
-            console.log("Not starting timer, already running");
         }
     }
     function stopTimer() {
         if( timerHandle ) {
-            console.log("stopping timer");
             window.clearInterval(timerHandle);
             timerHandle = undefined;
-        }
-        else {
-            console.log("not stopping timer, not running");
         }
     }
 
     function onReady() {
-        $.when(loadTags())
-            .then(function(resp) {
-            $("#links").html("");
-            checkImageList();
-            });
+        $.when(loadTags()).then(function(resp) {
+              $("#links").html("");
+              checkImageList();
+        });
     }
 
     // Public API
     return {
         onReady: onReady,
-        showImage: showImage,
+        showImage: showImage
     };
 })();
-
-
 
