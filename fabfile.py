@@ -86,27 +86,37 @@ else:
 templates = {
     "nginx": {
         "local_path": "deploy/nginx.conf",
-        "remote_path": "/etc/nginx/sites-enabled/%(proj_name)s.conf",
-        "reload_command": "service nginx restart",
+        #"remote_path": "/etc/nginx/sites-enabled/%(proj_name)s.conf",
+        "remote_path": "/tmp/%(proj_name)s.conf.nginx.sites.enabled",
+        #"reload_command": "service nginx restart",
     },
     "supervisor": {
         "local_path": "deploy/supervisor.conf",
+<<<<<<< HEAD
         "remote_path": "/etc/supervisor/conf.d/%(proj_name)s.conf",
         "reload_command": "supervisorctl restart gunicorn_%(proj_name)s",
+=======
+        #"remote_path": "/etc/supervisor/conf.d/%(proj_name)s.conf",
+        "remote_path": "/%(proj_name)s.conf.supervisor.conf.d",
+        #"reload_command": "supervisorctl restart gunicorn_%(proj_name)s",
+>>>>>>> 4b5d549c0a6fbf68b0423499318c66e2cef47743
     },
     "cron": {
         "local_path": "deploy/crontab",
-        "remote_path": "/etc/cron.d/%(proj_name)s",
+        #"remote_path": "/etc/cron.d/%(proj_name)s",
+        "remote_path": "/%(proj_name)s.cron.d",
         "owner": "root",
         "mode": "600",
     },
     "gunicorn": {
         "local_path": "deploy/gunicorn.conf.py.template",
-        "remote_path": "%(proj_path)s/gunicorn.conf.py",
+        #"remote_path": "%(proj_path)s/gunicorn.conf.py",
+        "remote_path": "/tmp/gunicorn.conf.py",
     },
     "settings": {
         "local_path": "deploy/local_settings.py.template",
-        "remote_path": "%(proj_path)s/local_settings.py",
+        #"remote_path": "%(proj_path)s/local_settings.py",
+        "remote_path": "/tmp/local_settings.py",
     },
 }
 
@@ -350,10 +360,16 @@ def backup(filename):
     """
     tmp_file = "/tmp/%s" % filename
     # We dump to /tmp because user "postgres" can't write to other user folders
+<<<<<<< HEAD
     if not env.db_sqlite:
         postgres("pg_dump -Fc %s > %s" % (env.proj_name, tmp_file))
         run("cp %s ." % tmp_file)
         sudo("rm -f %s" % tmp_file)
+=======
+    postgres("pg_dump -Fc %s > %s" % (env.proj_name, tmp_file))
+    run("cp %s ." % tmp_file)
+    sudo("rm -f %s" % tmp_file)
+>>>>>>> 4b5d549c0a6fbf68b0423499318c66e2cef47743
 
 
 @task
@@ -464,10 +480,17 @@ def create():
             sudo("update-locale %s" % env.locale)
             sudo("service postgresql restart")
             run("exit")
+<<<<<<< HEAD
 
     # Create project path
     run("mkdir -p %s" % env.proj_path)
 
+=======
+
+    # Create project path
+    run("mkdir -p %s" % env.proj_path)
+
+>>>>>>> 4b5d549c0a6fbf68b0423499318c66e2cef47743
     # Set up virtual env
     run("mkdir -p %s" % env.venv_home)
     with cd(env.venv_home):
@@ -486,6 +509,7 @@ def create():
         rsync_upload()
 
     # Create DB and DB user
+<<<<<<< HEAD
     if not env.db_sqlite:
         pw = db_pass()
         user_sql_args = (env.proj_name, pw.replace("'", "\'"))
@@ -496,6 +520,17 @@ def create():
         psql("CREATE DATABASE %s WITH OWNER %s ENCODING = 'UTF8' "
              "LC_CTYPE = '%s' LC_COLLATE = '%s' TEMPLATE template0;" %
              (env.proj_name, env.proj_name, env.locale, env.locale))
+=======
+    pw = db_pass()
+    user_sql_args = (env.proj_name, pw.replace("'", "\'"))
+    user_sql = "CREATE USER %s WITH ENCRYPTED PASSWORD '%s';" % user_sql_args
+    psql(user_sql, show=False)
+    shadowed = "*" * len(pw)
+    print_command(user_sql.replace("'%s'" % pw, "'%s'" % shadowed))
+    psql("CREATE DATABASE %s WITH OWNER %s ENCODING = 'UTF8' "
+         "LC_CTYPE = '%s' LC_COLLATE = '%s' TEMPLATE template0;" %
+         (env.proj_name, env.proj_name, env.locale, env.locale))
+>>>>>>> 4b5d549c0a6fbf68b0423499318c66e2cef47743
 
     # Set up SSL certificate
     if not env.ssl_disabled:
