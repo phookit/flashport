@@ -112,7 +112,7 @@ var PhookitGallery = (function(optionsin) {
             {tag_slug: slug},
             function( event ) {
                 // TODO: Clear the image thumbnail list 
-                tag = getTag(event.data.tag_slug);
+                var tag = getTag(event.data.tag_slug);
                 if( currentTag !== event.data.tag_slug ) {
                     //$("#links").html("");
                     hideTags(currentTag);
